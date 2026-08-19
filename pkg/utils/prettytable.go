@@ -5,6 +5,7 @@ import (
 	"github.com/kluctl/kluctl/lib/term"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
 type Row []string
@@ -30,8 +31,8 @@ func (t *PrettyTable) Render(limitWidths []int) string {
 		w := 0
 		for _, l := range t.rows {
 			for _, cl := range strings.Split(l[col], "\n") {
-				if len(cl) > w {
-					w = len(cl)
+				if utf8.RuneCountInString(cl) > w {
+					w = utf8.RuneCountInString(cl)
 				}
 			}
 		}
@@ -43,13 +44,13 @@ func (t *PrettyTable) Render(limitWidths []int) string {
 		return w
 	}
 	subStr := func(str string, s int, e int) string {
-		if s > len(str) {
-			s = len(str)
+		if s > utf8.RuneCountInString(str) {
+			s = utf8.RuneCountInString(str)
 		}
-		if e > len(str) {
-			e = len(str)
+		if e > utf8.RuneCountInString(str) {
+			e = utf8.RuneCountInString(str)
 		}
-		return str[s:e]
+		return string(([]rune(str))[s:e])
 	}
 
 	widths := make([]int, cols)
@@ -95,7 +96,7 @@ func (t *PrettyTable) Render(limitWidths []int) string {
 		for {
 			anyLess := false
 			for i := 0; i < cols; i++ {
-				if pos[i] < len(l[i]) {
+				if pos[i] < utf8.RuneCountInString(l[i]) {
 					anyLess = true
 				}
 			}
@@ -111,9 +112,9 @@ func (t *PrettyTable) Render(limitWidths []int) string {
 					x = x[:newLine]
 					pos[i] += 1
 				}
-				pos[i] += len(x)
+				pos[i] += utf8.RuneCountInString(x)
 				buf.WriteString(x)
-				buf.WriteString(strings.Repeat(" ", widths[i]-len(x)))
+				buf.WriteString(strings.Repeat(" ", widths[i]-utf8.RuneCountInString(x)))
 				if i != cols-1 {
 					buf.WriteString(" | ")
 				}
