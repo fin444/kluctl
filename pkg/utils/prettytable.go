@@ -15,7 +15,12 @@ type PrettyTable struct {
 }
 
 func (t *PrettyTable) AddRow(c ...string) {
-	t.rows = append(t.rows, c)
+	// expand tabs to 4 spaces, otherwise formatting breaks
+	formatted := make([]string, len(c))
+	for i, str := range c {
+		formatted[i] = strings.ReplaceAll(str, "\t", strings.Repeat(" ", 4))
+	}
+	t.rows = append(t.rows, formatted)
 }
 
 func (t *PrettyTable) SortRows(col int) {
