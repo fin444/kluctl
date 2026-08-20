@@ -18,7 +18,7 @@ type PrettyTable struct {
 func (t *PrettyTable) AddRow(c ...string) {
 	formatted := make([]Str, len(c))
 	for i, str := range c {
-		formatted[i] = Str(str)
+		formatted[i] = Str(strings.ReplaceAll(str, "\t", strings.Repeat(" ", 4)))
 	}
 	t.rows = append(t.rows, formatted)
 }
