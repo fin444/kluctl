@@ -5,21 +5,27 @@ import (
 	"github.com/kluctl/kluctl/lib/term"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
-type Row []string
+type Str []rune
+type Row []Str
 
 type PrettyTable struct {
 	rows []Row
 }
 
 func (t *PrettyTable) AddRow(c ...string) {
-	t.rows = append(t.rows, c)
+	formatted := make([]Str, len(c))
+	for i, str := range c {
+		formatted[i] = Str(str)
+	}
+	t.rows = append(t.rows, formatted)
 }
 
 func (t *PrettyTable) SortRows(col int) {
 	sort.SliceStable(t.rows[1:], func(i, j int) bool {
-		return t.rows[i+1][col] < t.rows[j+1][col]
+		return string(t.rows[i+1][col]) < string(t.rows[j+1][col])
 	})
 }
 
@@ -29,27 +35,34 @@ func (t *PrettyTable) Render(limitWidths []int) string {
 	maxWidth := func(col int, maxW int) int {
 		w := 0
 		for _, l := range t.rows {
-			for _, cl := range strings.Split(l[col], "\n") {
-				if len(cl) > w {
-					w = len(cl)
+			count := 0
+			for _, c := range l[col] {
+				count++
+				if c == '\n' {
+					if maxW != -1 && count > maxW {
+						return maxW
+					} else if count > w {
+						w = count
+					}
+					count = 0
 				}
 			}
-		}
-		if maxW != -1 {
-			if maxW < w {
-				w = maxW
+			if maxW != -1 && count > maxW {
+				return maxW
+			} else if count > w {
+				w = count
 			}
 		}
 		return w
 	}
-	subStr := func(str string, s int, e int) string {
+	subStr := func(str Str, s int, e int) string {
 		if s > len(str) {
 			s = len(str)
 		}
 		if e > len(str) {
 			e = len(str)
 		}
-		return str[s:e]
+		return string(str[s:e])
 	}
 
 	widths := make([]int, cols)
@@ -111,9 +124,10 @@ func (t *PrettyTable) Render(limitWidths []int) string {
 					x = x[:newLine]
 					pos[i] += 1
 				}
-				pos[i] += len(x)
+				lenX := utf8.RuneCountInString(x)
+				pos[i] += lenX
 				buf.WriteString(x)
-				buf.WriteString(strings.Repeat(" ", widths[i]-len(x)))
+				buf.WriteString(strings.Repeat(" ", widths[i]-lenX))
 				if i != cols-1 {
 					buf.WriteString(" | ")
 				}
